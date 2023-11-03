@@ -296,6 +296,7 @@ class CornersProblem(search.SearchProblem):
         space)
         """
         "*** YOUR CODE HERE ***"
+        return (*self.startingPosition, self.corners)
         util.raiseNotDefined()
 
     def isGoalState(self, state: Any):
@@ -303,7 +304,9 @@ class CornersProblem(search.SearchProblem):
         Returns whether this search state is a goal state of the problem.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        *_pos, corners = state
+        return len(corners) == 0
+        # util.raiseNotDefined()
 
     def getSuccessors(self, state: Any):
         """
@@ -326,6 +329,20 @@ class CornersProblem(search.SearchProblem):
             #   hitsWall = self.walls[nextx][nexty]
 
             "*** YOUR CODE HERE ***"
+            x,y, corners = state
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
+            hitsWall = self.walls[nextx][nexty]
+            if hitsWall:
+                continue
+
+            nextCorner = list(corners)
+            try:
+                nextCorner.remove((nextx, nexty))
+            except ValueError:
+                pass
+
+            successors.append(((nextx, nexty, tuple(nextCorner)), action, 1))
 
         self._expanded += 1 # DO NOT CHANGE
         return successors
@@ -357,10 +374,30 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
     shortest path from the state to a goal of the problem; i.e.  it should be
     admissible (as well as consistent).
     """
+    def mahartan_dist(point1, point2):
+        x, y = point1
+        d_x, d_y = point2
+
+        return abs(x - d_x) + abs(y - d_y)
     corners = problem.corners # These are the corner coordinates
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
+    heuristic = 0
+    x, y, c_corners = state
+    if len(c_corners) == 0:
+        return 0
+    
+
+    corners_and_dist = []
+
+    for corner in c_corners:
+        corners_and_dist.append((corner, mahartan_dist((x, y), corner)))
+
+    corners_and_dist.sort(key=lambda obj: -obj[1])
+    farest_point, _ = corners_and_dist[0]
+    heuristic = mahartan_dist(farest_point, (x, y))
+    
     return 0 # Default to trivial solution
 
 class AStarCornersAgent(SearchAgent):
@@ -455,7 +492,22 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
-    return 0
+    if foodGrid.count() == 0:
+        return 0
+    farestFood = 0
+
+    for food in foodGrid.asList():
+        sub_problem = PositionSearchProblem(
+            gameState=problem.startingGameState,
+            start=position,
+            goal=food,
+            warn=False,
+            visualize=False
+        )
+
+        farestFood = max(farestFood, len(search.bfs(sub_problem)))
+
+    return farestFood
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
@@ -486,7 +538,7 @@ class ClosestDotSearchAgent(SearchAgent):
         problem = AnyFoodSearchProblem(gameState)
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return search.bfs(problem)
 
 class AnyFoodSearchProblem(PositionSearchProblem):
     """
@@ -522,7 +574,7 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         x,y = state
 
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.food[x][y]
 
 def mazeDistance(point1: Tuple[int, int], point2: Tuple[int, int], gameState: pacman.GameState) -> int:
     """
