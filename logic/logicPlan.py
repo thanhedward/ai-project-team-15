@@ -50,6 +50,13 @@ def sentence1() -> Expr:
     (not A) or (not B) or C
     """
     "*** BEGIN YOUR CODE HERE ***"
+    A = Expr('A')
+    B = Expr('B')
+    C = Expr('C')
+    FirstExpr = A | B
+    SecondExpr = ~A % (~B | C)
+    ThirdExpr = disjoin([~A, ~B, C])
+    return conjoin([FirstExpr, SecondExpr, ThirdExpr])
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -63,6 +70,15 @@ def sentence2() -> Expr:
     (not D) implies C
     """
     "*** BEGIN YOUR CODE HERE ***"
+    A = Expr('A')
+    B = Expr('B')
+    C = Expr('C')
+    D = Expr('D')
+    FirstExpr = C % (B | D)
+    SecondExpr = A >> (~B & ~D)
+    ThirdExpr = ~(B & ~C) >> A
+    FourthExpr = ~D >> C
+    return conjoin(FirstExpr, SecondExpr, ThirdExpr, FourthExpr)
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -80,6 +96,14 @@ def sentence3() -> Expr:
     Pacman is born at time 0.
     """
     "*** BEGIN YOUR CODE HERE ***"
+    A_0 = PropSymbolExpr('PacmanAlive', time = 0)
+    A_1 = PropSymbolExpr('PacmanAlive', time = 1)
+    B_0 = PropSymbolExpr('PacmanBorn', time = 0)
+    K_0 = PropSymbolExpr('PacmanKilled', time = 0)
+    FirstExpr = A_1 % ((A_0 & ~K_0) | (~A_0 & B_0))
+    SecondExpr = ~(A_0 & B_0)
+    ThirdExpr = B_0
+    return conjoin(FirstExpr, SecondExpr, ThirdExpr)
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -97,6 +121,7 @@ def findModelUnderstandingCheck() -> Dict[Expr, bool]:
     a = Expr('A')
     "*** BEGIN YOUR CODE HERE ***"
     print("a.__dict__ is:", a.__dict__) # might be helpful for getting ideas
+    return {'a': True}
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -104,6 +129,10 @@ def entails(premise: Expr, conclusion: Expr) -> bool:
     """Returns True if the premise entails the conclusion and False otherwise.
     """
     "*** BEGIN YOUR CODE HERE ***"
+    A = Expr('A')
+    if findModel(premise & ~conclusion) != False:
+        return False
+    return True
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -138,6 +167,7 @@ def atLeastOne(literals: List[Expr]) -> Expr:
     True
     """
     "*** BEGIN YOUR CODE HERE ***"
+    return disjoin(literals)
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -150,6 +180,8 @@ def atMostOne(literals: List[Expr]) -> Expr:
     itertools.combinations may be useful here.
     """
     "*** BEGIN YOUR CODE HERE ***"
+    exprPairs = itertools.combinations(literals, 2)
+    return conjoin(list(map(lambda pair: ~pair[0] | ~pair[1], exprPairs))) 
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -161,6 +193,7 @@ def exactlyOne(literals: List[Expr]) -> Expr:
     the expressions in the list is true.
     """
     "*** BEGIN YOUR CODE HERE ***"
+    return atLeastOne(literals) & atMostOne(literals)
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -194,6 +227,7 @@ def pacmanSuccessorAxiomSingle(x: int, y: int, time: int, walls_grid: List[List[
         return None
     
     "*** BEGIN YOUR CODE HERE ***"
+    return conjoin([PropSymbolExpr(pacman_str, x, y, time=now), ~PropSymbolExpr(pacman_str, x, y, time=last) , ~PropSymbolExpr(wall_str, x, y), disjoin(possible_causes)])
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
