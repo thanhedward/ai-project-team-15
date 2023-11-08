@@ -59,7 +59,7 @@ class Tracker(object):
         for prereq in sorted(self.prereqs[q]):
             if self.points[prereq] < self.maxes[prereq]:
                 print("""*** NOTE: Make sure to complete Question {} before working on Question {},
-*** because Question {} builds upon your answer for Question {}.
+*** because Question {} builds upon your answer for Question {}./q
 """.format(prereq, q, q, prereq))
                 return False
 
