@@ -62,6 +62,18 @@ class RegressionModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        self.learning_rate = 0.05
+        # Tham số ở tầng 1
+        self.weight_1 = nn.Parameter(1, 256) # Trọng số
+        self.bias_1 = nn.Parameter(1, 256) # Độ lệch
+        # Tham số ở tầng 2
+        self.weight_2 = nn.Parameter(256, 256) # Trọng số
+        self.bias_2 = nn.Parameter(1, 256) # Độ lệch
+        # Tham số ở tầng 3
+        self.weight_3 = nn.Parameter(256, 1) # Trọng số
+        self.bias_3 = nn.Parameter(1, 1) # Độ lệch
+        # Danh sách các tham số
+        self.params = [self.weight_1, self.bias_1, self.weight_2, self.bias_2, self.weight_3, self.bias_3]
 
     def run(self, x):
         """
@@ -73,6 +85,22 @@ class RegressionModel(object):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         "*** YOUR CODE HERE ***"
+        # Tính tích vô hướng
+        first_hidden_layer_linear = nn.Linear(x, self.weight_1) 
+        # Cộng tích vô hướng với độ lệch để được đầu vào cho hàm kích hoạt
+        first_hidden_layer_input = nn.AddBias(first_hidden_layer_linear, self.bias_1)
+        # Tính đầu ra của hàm kích hoạt hàm ReLU (hàm thay thế các số âm thành 0) 
+        first_hidden_layer = nn.ReLU(first_hidden_layer_input) 
+        # Tính tích vô hướng
+        second_hidden_layer_linear = nn.Linear(first_hidden_layer, self.weight_2)
+        # Cộng tích vô hướng với độ lệch để được đầu vào cho hàm kích hoạt 
+        second_hidden_layer_input = nn.AddBias(second_hidden_layer_linear, self.bias_2) 
+        # Tính đầu ra của hàm kích hoạt hàm ReLU (hàm thay thế các số âm thành 0)
+        second_hidden_layer = nn.ReLU(second_hidden_layer_input) 
+        # Đầu ra dự đoán
+        output_layer = nn.AddBias(nn.Linear(second_hidden_layer, self.weight_3),self.bias_3) 
+
+        return output_layer
 
     def get_loss(self, x, y):
         """
@@ -85,12 +113,31 @@ class RegressionModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        y_predict = self.run(x) # Giá trị dự đoán của y
+        return nn.SquareLoss(y_predict, y) # Tính loss giữa y dự đoán và y thực tế
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        batch_size = 200
+        while True:
+            for x, y in dataset.iterate_once(batch_size):
+            # Tính toán giá trị mất mát
+                loss = self.get_loss(x, y) 
+            # Tính toán gradient ("một vector chứa đạo hàm riêng") của hàm mất mát
+                grads = nn.gradients(loss, self.params) 
+            # Trích xuất từ loss một số trong Python để so sánh
+                loss = nn.as_scalar(loss) 
+            # Tạo vòng lặp để điều chỉnh các tham số weight và bias để loss nhỏ nhất
+                for i in range(len(self.params)): 
+            # Trừ dần giá trị tích của gradient và tốc độ học và cập nhật giá trị để tiến gần với loss bé nhất
+                    self.params[i].update(grads[i], -self.learning_rate) 
+            # Khi loss bé hơn 0.01("đạt yêu cầu") thì dừng vòng lặp
+            if loss < 0.01: 
+                break           
+
 
 class DigitClassificationModel(object):
     """
