@@ -306,15 +306,15 @@ def pacphysicsAxioms(t: int, all_coords: List[Tuple], non_outer_wall_coords: Lis
     for (x,y) in all_coords:
         pacphysics_sentences.append(PropSymbolExpr(wall_str, x, y) >> ~PropSymbolExpr(pacman_str, x, y, time=t))
     
-    at_non_outer_wall = []
+    possible_locs_at_time = []
     for (x,y) in non_outer_wall_coords:
-        at_non_outer_wall.append(PropSymbolExpr(pacman_str, x, y, time=t))
-    pacphysics_sentences.append(exactlyOne(at_non_outer_wall))
+        possible_locs_at_time.append(PropSymbolExpr(pacman_str, x, y, time=t))
+    pacphysics_sentences.append(exactlyOne(possible_locs_at_time))
     
-    actions = []
+    possible_actions_at_time = []
     for action in DIRECTIONS:
-        actions.append(PropSymbolExpr(action, time=t))
-    pacphysics_sentences.append(exactlyOne(actions))
+        possible_actions_at_time.append(PropSymbolExpr(action, time=t))
+    pacphysics_sentences.append(exactlyOne(possible_actions_at_time))
 
     if sensorModel != None:
         pacphysics_sentences.append(sensorModel(t, non_outer_wall_coords))
@@ -396,19 +396,19 @@ def positionLogicPlan(problem) -> List:
     KB.append(PropSymbolExpr(pacman_str, x0, y0, time=0))
     for t in range(50):
         print('Current cost:', t, end = '\r')
-        at_non_wall = []
+        possible_locs_at_time = []
         for (x,y) in non_wall_coords:
-            at_non_wall.append(PropSymbolExpr(pacman_str, x, y, time=t))
-        KB.append(exactlyOne(at_non_wall))
+            possible_locs_at_time.append(PropSymbolExpr(pacman_str, x, y, time=t))
+        KB.append(exactlyOne(possible_locs_at_time))
 
         model = findModel(conjoin(KB) & PropSymbolExpr(pacman_str, xg, yg, time=t))
         if model != False:
             return extractActionSequence(model, actions)
 
-        direction = []
+        possible_actions_at_time = []
         for action in DIRECTIONS:
-            direction.append(PropSymbolExpr(action, time=t))
-        KB.append(exactlyOne(direction))
+            possible_actions_at_time.append(PropSymbolExpr(action, time=t))
+        KB.append(exactlyOne(possible_actions_at_time))
 
         for (x,y) in non_wall_coords:
             KB.append(pacmanSuccessorAxiomSingle(x, y, t+1, walls_grid))
@@ -442,6 +442,34 @@ def foodLogicPlan(problem) -> List:
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
+    KB.append(PropSymbolExpr(pacman_str, x0, y0, time=0))
+    for (x,y) in food:
+        KB.append(PropSymbolExpr(food_str, x, y, time=0))
+
+    for t in range(50):
+        print('Current cost:', t, end = '\r')
+
+        possible_locs_at_time = []
+        for (x,y) in non_wall_coords:
+            possible_locs_at_time.append(PropSymbolExpr(pacman_str, x, y, time=t))
+        KB.append(exactlyOne(possible_locs_at_time))
+
+        model = findModel(conjoin(KB) & conjoin([~PropSymbolExpr(food_str, x, y, time=t) for (x,y) in food]))
+        if model != False:
+            return extractActionSequence(model, actions)
+
+        for (x,y) in food:
+            eat_action: Expr = (PropSymbolExpr(food_str, x, y, time=t) & PropSymbolExpr(pacman_str, x, y, time=t)) % ~PropSymbolExpr(food_str, x, y, time=t+1)
+            KB.append(eat_action | ~PropSymbolExpr(food_str, x, y, time=t))
+
+        possible_actions_at_time = []
+        for action in DIRECTIONS:
+            possible_actions_at_time.append(PropSymbolExpr(action, time=t))
+        KB.append(exactlyOne(possible_actions_at_time))
+
+        for (x,y) in non_wall_coords:
+            KB.append(pacmanSuccessorAxiomSingle(x, y, t+1, walls))
+
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
