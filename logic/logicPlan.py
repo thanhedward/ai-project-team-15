@@ -129,7 +129,6 @@ def entails(premise: Expr, conclusion: Expr) -> bool:
     """Returns True if the premise entails the conclusion and False otherwise.
     """
     "*** BEGIN YOUR CODE HERE ***"
-    A = Expr('A')
     if findModel(premise & ~conclusion) != False:
         return False
     return True
@@ -181,8 +180,12 @@ def atMostOne(literals: List[Expr]) -> Expr:
     itertools.combinations may be useful here.
     """
     "*** BEGIN YOUR CODE HERE ***"
+    # At most one of the expressions is true mean there is no pair of expressions that is both true
     exprPairs = itertools.combinations(literals, 2)
-    return conjoin(list(map(lambda pair: ~pair[0] | ~pair[1], exprPairs))) 
+    # Use De Morgan to convert pair into CNF 
+    def de_morgan(pair):
+        return ~pair[0] | ~pair[1]
+    return conjoin([de_morgan(pair) for pair in exprPairs])
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -228,7 +231,7 @@ def pacmanSuccessorAxiomSingle(x: int, y: int, time: int, walls_grid: List[List[
         return None
     
     "*** BEGIN YOUR CODE HERE ***"
-    return conjoin([PropSymbolExpr(pacman_str, x, y, time=now), ~PropSymbolExpr(pacman_str, x, y, time=last) , ~PropSymbolExpr(wall_str, x, y), disjoin(possible_causes)])
+    return PropSymbolExpr(pacman_str, x, y, time=now) % disjoin(possible_causes)
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
@@ -300,7 +303,26 @@ def pacphysicsAxioms(t: int, all_coords: List[Tuple], non_outer_wall_coords: Lis
     pacphysics_sentences = []
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    for (x,y) in all_coords:
+        pacphysics_sentences.append(PropSymbolExpr(wall_str, x, y) >> ~PropSymbolExpr(pacman_str, x, y, time=t))
+    
+    at_non_outer_wall = []
+    for (x,y) in non_outer_wall_coords:
+        at_non_outer_wall.append(PropSymbolExpr(pacman_str, x, y, time=t))
+    pacphysics_sentences.append(exactlyOne(at_non_outer_wall))
+    
+    actions = []
+    for action in DIRECTIONS:
+        actions.append(PropSymbolExpr(action, time=t))
+    pacphysics_sentences.append(exactlyOne(actions))
+
+    if sensorModel != None:
+        pacphysics_sentences.append(sensorModel(t, non_outer_wall_coords))
+    
+    if successorAxioms != None and t > 0:
+        pacphysics_sentences.append(successorAxioms(t, walls_grid, non_outer_wall_coords))
+
+    # util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
     return conjoin(pacphysics_sentences)
@@ -334,6 +356,16 @@ def checkLocationSatisfiability(x1_y1: Tuple[int, int], x0_y0: Tuple[int, int], 
     KB.append(conjoin(map_sent))
 
     "*** BEGIN YOUR CODE HERE ***"
+    KB.append(pacphysicsAxioms(0, all_coords, non_outer_wall_coords, walls_grid))
+    KB.append(pacphysicsAxioms(1, all_coords, non_outer_wall_coords, walls_grid,successorAxioms=allLegalSuccessorAxioms))
+    KB.append(PropSymbolExpr(pacman_str, x0, y0, time=0))
+    KB.append(PropSymbolExpr(action0, time=0))
+    KB.append(PropSymbolExpr(action1, time=1))
+    
+    model1 = findModel(conjoin(KB) & PropSymbolExpr(pacman_str, x1, y1, time=1))
+    model2 = findModel(conjoin(KB) & ~PropSymbolExpr(pacman_str, x1, y1, time=1))
+
+    return (model1, model2)
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
