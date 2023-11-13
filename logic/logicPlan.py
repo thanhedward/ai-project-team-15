@@ -357,7 +357,7 @@ def checkLocationSatisfiability(x1_y1: Tuple[int, int], x0_y0: Tuple[int, int], 
 
     "*** BEGIN YOUR CODE HERE ***"
     KB.append(pacphysicsAxioms(0, all_coords, non_outer_wall_coords, walls_grid))
-    KB.append(pacphysicsAxioms(1, all_coords, non_outer_wall_coords, walls_grid,successorAxioms=allLegalSuccessorAxioms))
+    KB.append(pacphysicsAxioms(1, all_coords, non_outer_wall_coords, walls_grid, successorAxioms=allLegalSuccessorAxioms))
     KB.append(PropSymbolExpr(pacman_str, x0, y0, time=0))
     KB.append(PropSymbolExpr(action0, time=0))
     KB.append(PropSymbolExpr(action1, time=1))
@@ -393,6 +393,26 @@ def positionLogicPlan(problem) -> List:
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
+    KB.append(PropSymbolExpr(pacman_str, x0, y0, time=0))
+    for t in range(50):
+        print('Current cost:', t, end = '\r')
+        at_non_wall = []
+        for (x,y) in non_wall_coords:
+            at_non_wall.append(PropSymbolExpr(pacman_str, x, y, time=t))
+        KB.append(exactlyOne(at_non_wall))
+
+        model = findModel(conjoin(KB) & PropSymbolExpr(pacman_str, xg, yg, time=t))
+        if model != False:
+            return extractActionSequence(model, actions)
+
+        direction = []
+        for action in DIRECTIONS:
+            direction.append(PropSymbolExpr(action, time=t))
+        KB.append(exactlyOne(direction))
+
+        for (x,y) in non_wall_coords:
+            KB.append(pacmanSuccessorAxiomSingle(x, y, t+1, walls_grid))
+
     util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
