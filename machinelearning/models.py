@@ -26,7 +26,8 @@ class PerceptronModel(object):
             x: a node with shape (1 x dimensions)
         Returns: a node containing a single number (the score)
         """
-        "*** YOUR CODE HERE ***"
+        # DotProduct chỉ được sử dụng với perceptron
+        return nn.DotProduct(x, self.w)
 
     def get_prediction(self, x):
         """
@@ -34,13 +35,23 @@ class PerceptronModel(object):
 
         Returns: 1 or -1
         """
-        "*** YOUR CODE HERE ***"
+
+        res = 1 if nn.as_scalar(nn.DotProduct(self.w, x)) >= 0 else -1
+        return res
+
 
     def train(self, dataset):
         """
         Train the perceptron until convergence.
         """
-        "*** YOUR CODE HERE ***"
+        while True:
+            match = True
+            for x, y in dataset.iterate_once(1):
+                if nn.as_scalar(y) != self.get_prediction(x):
+                    match = False
+                    self.w.update(x, nn.as_scalar(y))
+            if match:
+                break
 
 class RegressionModel(object):
     """
@@ -51,6 +62,18 @@ class RegressionModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        self.learning_rate = 0.05
+        # Tham số ở tầng 1
+        self.weight_1 = nn.Parameter(1, 256) # Trọng số
+        self.bias_1 = nn.Parameter(1, 256) # Độ lệch
+        # Tham số ở tầng 2
+        self.weight_2 = nn.Parameter(256, 256) # Trọng số
+        self.bias_2 = nn.Parameter(1, 256) # Độ lệch
+        # Tham số ở tầng 3
+        self.weight_3 = nn.Parameter(256, 1) # Trọng số
+        self.bias_3 = nn.Parameter(1, 1) # Độ lệch
+        # Danh sách các tham số
+        self.params = [self.weight_1, self.bias_1, self.weight_2, self.bias_2, self.weight_3, self.bias_3]
 
     def run(self, x):
         """
@@ -62,6 +85,22 @@ class RegressionModel(object):
             A node with shape (batch_size x 1) containing predicted y-values
         """
         "*** YOUR CODE HERE ***"
+        # Tính tích vô hướng
+        first_hidden_layer_linear = nn.Linear(x, self.weight_1) 
+        # Cộng tích vô hướng với độ lệch để được đầu vào cho hàm kích hoạt
+        first_hidden_layer_input = nn.AddBias(first_hidden_layer_linear, self.bias_1)
+        # Tính đầu ra của hàm kích hoạt hàm ReLU (hàm thay thế các số âm thành 0) 
+        first_hidden_layer = nn.ReLU(first_hidden_layer_input) 
+        # Tính tích vô hướng
+        second_hidden_layer_linear = nn.Linear(first_hidden_layer, self.weight_2)
+        # Cộng tích vô hướng với độ lệch để được đầu vào cho hàm kích hoạt 
+        second_hidden_layer_input = nn.AddBias(second_hidden_layer_linear, self.bias_2) 
+        # Tính đầu ra của hàm kích hoạt hàm ReLU (hàm thay thế các số âm thành 0)
+        second_hidden_layer = nn.ReLU(second_hidden_layer_input) 
+        # Đầu ra dự đoán
+        output_layer = nn.AddBias(nn.Linear(second_hidden_layer, self.weight_3),self.bias_3) 
+
+        return output_layer
 
     def get_loss(self, x, y):
         """
@@ -74,12 +113,31 @@ class RegressionModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        y_predict = self.run(x) # Giá trị dự đoán của y
+        return nn.SquareLoss(y_predict, y) # Tính loss giữa y dự đoán và y thực tế
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        batch_size = 200
+        while True:
+            for x, y in dataset.iterate_once(batch_size):
+            # Tính toán giá trị mất mát
+                loss = self.get_loss(x, y) 
+            # Tính toán gradient ("một vector chứa đạo hàm riêng") của hàm mất mát
+                grads = nn.gradients(loss, self.params) 
+            # Trích xuất từ loss một số trong Python để so sánh
+                loss = nn.as_scalar(loss) 
+            # Tạo vòng lặp để điều chỉnh các tham số weight và bias để loss nhỏ nhất
+                for i in range(len(self.params)): 
+            # Trừ dần giá trị tích của gradient và tốc độ học và cập nhật giá trị để tiến gần với loss bé nhất
+                    self.params[i].update(grads[i], -self.learning_rate) 
+            # Khi loss bé hơn 0.01("đạt yêu cầu") thì dừng vòng lặp
+            if loss < 0.01: 
+                break           
+
 
 class DigitClassificationModel(object):
     """
@@ -152,7 +210,21 @@ class LanguageIDModel(object):
         self.num_chars = 47
         self.languages = ["English", "Spanish", "Finnish", "Dutch", "Polish"]
 
-        # Initialize your model parameters here
+        # Tốc độ học
+        self.learning_rate = 0.1
+
+        # Initialize your model parameters here 
+        # Tất cả các từ trong cùng 1 batch đều có cùng độ dài
+        self.initial_w = nn.Parameter(self.num_chars, 128) # Trọng số của input
+        self.initial_b = nn.Parameter(1, 128) # Độ lệch
+
+        # Hidden layers
+        self.weight = nn.Parameter(128, 128)
+        self.bias = nn.Parameter(1, 128)
+
+        # output
+        self.output_w = nn.Parameter(128, len(self.languages)) #self.languages = 5
+        self.output_b =  nn.Parameter(1, len(self.languages))
         "*** YOUR CODE HERE ***"
 
     def run(self, xs):
@@ -185,6 +257,23 @@ class LanguageIDModel(object):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+        
+        # Lý thuyết trong hướng dẫn: h1 = f(initial)(x0) ~ z0 = x0 * W0
+        # Xử lí kí tự đầu tiên
+        z0 = nn.Linear(xs[0], self.initial_w)
+        z0 = nn.ReLU(nn.AddBias(z0, self.initial_b))
+        z = z0
+
+        # Lấy đầu ra của phần tử trước làm đầu vào của phần tử sau
+        # Lý thuyết trong hướng dẫn hi = f(hi, xi) ~ zi = xi * Wx + hi * Whidden
+        for i in range(1, len(xs)):
+            # Lí thuyết trong hướng dẫn z = nn.Add(nn.Linear(x, W), nn.Linear(h, W_hidden))
+            z_raw = nn.Add(nn.Linear(xs[i], self.initial_w), nn.Linear(z, self.weight))
+            z = nn.ReLU(nn.AddBias(z_raw, self.bias))
+        return nn.AddBias(nn.Linear(z, self.output_w), self.output_b)
+    
+
+
 
     def get_loss(self, xs, y):
         """
@@ -201,9 +290,28 @@ class LanguageIDModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        output_predict = self.run(xs) # Giá trị dự đoán của xs
+        return nn.SoftmaxLoss(output_predict, y) # Tính loss giữa output dự đoán và output thực tế
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        batch_size = 100
+        loss = None
+        accuracy = 0
+        # Tăng giá trị dừng vòng lặp để cải thiện độ chính xác
+        while accuracy < 0.85: 
+            for x, y in dataset.iterate_once(batch_size):
+                loss = self.get_loss(x, y)
+                grads = nn.gradients(loss, [self.initial_w, self.weight, self.output_w, self.initial_b, self.bias, self.output_b]) # Tính gradient
+                loss = nn.as_scalar(loss)
+                # Trừ đi tích của gradient và learning_rate để tiến dần đến cực trị cho mất mát là nhỏ nhất
+                self.initial_w.update(grads[0], -self.learning_rate)
+                self.weight.update(grads[1], -self.learning_rate)
+                self.output_w.update(grads[2], -self.learning_rate)
+                self.initial_b.update(grads[3], -self.learning_rate)
+                self.bias.update(grads[4], -self.learning_rate)
+                self.output_b.update(grads[5], -self.learning_rate)
+            accuracy = dataset.get_validation_accuracy()
