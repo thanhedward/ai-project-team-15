@@ -57,7 +57,6 @@ def sentence1() -> Expr:
     SecondExpr = ~A % (~B | C)
     ThirdExpr = disjoin([~A, ~B, C])
     return conjoin([FirstExpr, SecondExpr, ThirdExpr])
-    util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
 
@@ -79,7 +78,6 @@ def sentence2() -> Expr:
     ThirdExpr = ~(B & ~C) >> A
     FourthExpr = ~D >> C
     return conjoin(FirstExpr, SecondExpr, ThirdExpr, FourthExpr)
-    util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
 
@@ -104,7 +102,6 @@ def sentence3() -> Expr:
     SecondExpr = ~(A_0 & B_0)
     ThirdExpr = B_0
     return conjoin(FirstExpr, SecondExpr, ThirdExpr)
-    util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
 def findModel(sentence: Expr) -> Dict[Expr, bool]:
@@ -132,7 +129,6 @@ def entails(premise: Expr, conclusion: Expr) -> bool:
     if findModel(premise & ~conclusion) != False:
         return False
     return True
-    util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
 def plTrueInverse(assignments: Dict[Expr, bool], inverse_statement: Expr) -> bool:
@@ -141,7 +137,6 @@ def plTrueInverse(assignments: Dict[Expr, bool], inverse_statement: Expr) -> boo
     """
     "*** BEGIN YOUR CODE HERE ***"
     return pl_true(~inverse_statement, assignments)
-    util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
 #______________________________________________________________________________
@@ -168,7 +163,6 @@ def atLeastOne(literals: List[Expr]) -> Expr:
     """
     "*** BEGIN YOUR CODE HERE ***"
     return disjoin(literals)
-    util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
 
@@ -186,7 +180,6 @@ def atMostOne(literals: List[Expr]) -> Expr:
     def de_morgan(pair):
         return ~pair[0] | ~pair[1]
     return conjoin([de_morgan(pair) for pair in exprPairs])
-    util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
 
@@ -198,7 +191,6 @@ def exactlyOne(literals: List[Expr]) -> Expr:
     """
     "*** BEGIN YOUR CODE HERE ***"
     return atLeastOne(literals) & atMostOne(literals)
-    util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
 #______________________________________________________________________________
@@ -232,7 +224,6 @@ def pacmanSuccessorAxiomSingle(x: int, y: int, time: int, walls_grid: List[List[
     
     "*** BEGIN YOUR CODE HERE ***"
     return PropSymbolExpr(pacman_str, x, y, time=now) % disjoin(possible_causes)
-    util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
 
@@ -322,7 +313,6 @@ def pacphysicsAxioms(t: int, all_coords: List[Tuple], non_outer_wall_coords: Lis
     if successorAxioms != None and t > 0:
         pacphysics_sentences.append(successorAxioms(t, walls_grid, non_outer_wall_coords))
 
-    # util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
     return conjoin(pacphysics_sentences)
@@ -366,7 +356,6 @@ def checkLocationSatisfiability(x1_y1: Tuple[int, int], x0_y0: Tuple[int, int], 
     model2 = findModel(conjoin(KB) & ~PropSymbolExpr(pacman_str, x1, y1, time=1))
 
     return (model1, model2)
-    util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
 #______________________________________________________________________________
@@ -413,7 +402,6 @@ def positionLogicPlan(problem) -> List:
         for (x,y) in non_wall_coords:
             KB.append(pacmanSuccessorAxiomSingle(x, y, t+1, walls_grid))
 
-    util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
 #______________________________________________________________________________
@@ -470,7 +458,6 @@ def foodLogicPlan(problem) -> List:
         for (x,y) in non_wall_coords:
             KB.append(pacmanSuccessorAxiomSingle(x, y, t+1, walls))
 
-    util.raiseNotDefined()
     "*** END YOUR CODE HERE ***"
 
 #______________________________________________________________________________
@@ -489,7 +476,6 @@ def localization(problem, agent) -> Generator:
     KB = []
 
     "*** BEGIN YOUR CODE HERE ***"
-    # util.raiseNotDefined()
     for (x,y) in all_coords:
         if (x,y) in walls_list:
             KB.append(PropSymbolExpr(wall_str, x, y))
@@ -541,7 +527,6 @@ def mapping(problem, agent) -> Generator:
     KB.append(conjoin(outer_wall_sent))
 
     "*** BEGIN YOUR CODE HERE ***"
-    # util.raiseNotDefined()
     KB.append(PropSymbolExpr(pacman_str, pac_x_0, pac_y_0, time=0))
 
     for t in range(agent.num_timesteps):
