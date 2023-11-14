@@ -545,6 +545,7 @@ def mapping(problem, agent) -> Generator:
     KB.append(PropSymbolExpr(pacman_str, pac_x_0, pac_y_0, time=0))
 
     for t in range(agent.num_timesteps):
+        # Known map grid for successorAxioms
         known_map_grid = [[] for _ in range(len(known_map))]
         for i in range(0, len(known_map)):
             for j in range(0, len(known_map[i])):
@@ -559,22 +560,13 @@ def mapping(problem, agent) -> Generator:
         KB.append(fourBitPerceptRules(t, agent.getPercepts()))
 
         for (x,y) in non_outer_wall_coords:
-            maybe_a_wall = entails(conjoin(KB), PropSymbolExpr(wall_str, x, y))
-            maybe_not_a_wall = entails(conjoin(KB), ~PropSymbolExpr(wall_str, x, y))
-            if maybe_a_wall:
+            if entails(conjoin(KB), PropSymbolExpr(wall_str, x, y)):
                 KB.append(PropSymbolExpr(wall_str, x, y))
                 known_map[x][y] = 1
-            elif maybe_not_a_wall:
+            elif entails(conjoin(KB), ~PropSymbolExpr(wall_str, x, y)):
                 KB.append(~PropSymbolExpr(wall_str, x, y))
                 known_map[x][y] = 0
             
-            # if (not maybe_a_wall) and (not maybe_not_a_wall):
-            #     known_map[x][y] = -1
-            # # elif not maybe_a_wall:
-            # #     known_map[x][y] = 0
-            # # else:
-            # #     known_map[x][y] = 1
-
         agent.moveToNextState(agent.actions[t])
 
         "*** END YOUR CODE HERE ***"
