@@ -497,7 +497,7 @@ def localization(problem, agent) -> Generator:
             KB.append(~PropSymbolExpr(wall_str, x, y))
 
     for t in range(agent.num_timesteps):
-        KB.append(pacphysicsAxioms(t, all_coords, non_outer_wall_coords, walls_grid, SLAMSensorAxioms, SLAMSuccessorAxioms))
+        KB.append(pacphysicsAxioms(t, all_coords, non_outer_wall_coords, walls_grid, sensorAxioms, allLegalSuccessorAxioms))
         KB.append(PropSymbolExpr(agent.actions[t], time=t))
         KB.append(fourBitPerceptRules(t, agent.getPercepts()))
 
@@ -541,9 +541,42 @@ def mapping(problem, agent) -> Generator:
     KB.append(conjoin(outer_wall_sent))
 
     "*** BEGIN YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # util.raiseNotDefined()
+    KB.append(PropSymbolExpr(pacman_str, pac_x_0, pac_y_0, time=0))
 
     for t in range(agent.num_timesteps):
+        known_map_grid = [[] for _ in range(len(known_map))]
+        for i in range(0, len(known_map)):
+            for j in range(0, len(known_map[i])):
+                val = known_map[i][j]
+                if val == -1:
+                    known_map_grid[i].append(0)
+                else:
+                    known_map_grid[i].append(val)
+
+        KB.append(pacphysicsAxioms(t, all_coords, non_outer_wall_coords, known_map_grid, sensorAxioms, allLegalSuccessorAxioms))
+        KB.append(PropSymbolExpr(agent.actions[t], time=t))
+        KB.append(fourBitPerceptRules(t, agent.getPercepts()))
+
+        for (x,y) in non_outer_wall_coords:
+            maybe_a_wall = entails(conjoin(KB), PropSymbolExpr(wall_str, x, y))
+            maybe_not_a_wall = entails(conjoin(KB), ~PropSymbolExpr(wall_str, x, y))
+            if maybe_a_wall:
+                KB.append(PropSymbolExpr(wall_str, x, y))
+                known_map[x][y] = 1
+            elif maybe_not_a_wall:
+                KB.append(~PropSymbolExpr(wall_str, x, y))
+                known_map[x][y] = 0
+            
+            # if (not maybe_a_wall) and (not maybe_not_a_wall):
+            #     known_map[x][y] = -1
+            # # elif not maybe_a_wall:
+            # #     known_map[x][y] = 0
+            # # else:
+            # #     known_map[x][y] = 1
+
+        agent.moveToNextState(agent.actions[t])
+
         "*** END YOUR CODE HERE ***"
         yield known_map
 
@@ -576,6 +609,7 @@ def slam(problem, agent) -> Generator:
     util.raiseNotDefined()
 
     for t in range(agent.num_timesteps):
+        
         "*** END YOUR CODE HERE ***"
         yield (known_map, possible_locations)
 
