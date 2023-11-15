@@ -156,6 +156,21 @@ class DigitClassificationModel(object):
     def __init__(self):
         # Initialize your model parameters here
         "*** YOUR CODE HERE ***"
+        # Initialize your model parameters here
+        "*** YOUR CODE HERE ***"
+        # Tốc độ học
+        self.learning_rate = 0.5
+        # Tham số tầng 1
+        self.weight_1 = nn.Parameter(784, 125) # Trọng số
+        self.bias_1 = nn.Parameter(1, 125) # Độ lệch
+        # Tham số tầng 2
+        self.weight_2 = nn.Parameter(125, 75) # Trọng số
+        self.bias_2 = nn.Parameter(1, 75) # Độ lệch
+        # Tham số tầng 3
+        self.weight_3 = nn.Parameter(75, 10)# Trọng số
+        self.bias_3 = nn.Parameter(1, 10) # Độ lệch
+        # Mảng các tham số
+        self.params = [self.weight_1, self.bias_1, self.weight_2, self.bias_2, self.weight_3, self.bias_3,]
 
     def run(self, x):
         """
@@ -172,6 +187,22 @@ class DigitClassificationModel(object):
                 (also called logits)
         """
         "*** YOUR CODE HERE ***"
+        # Tính tích vô hướng
+        first_hidden_layer_linear = nn.Linear(x, self.weight_1) 
+        # Cộng tích vô hướng với độ lệch để được đầu vào cho hàm kích hoạt
+        first_hidden_layer_input = nn.AddBias(first_hidden_layer_linear, self.bias_1)
+        # Tính đầu ra của hàm kích hoạt hàm ReLU (hàm thay thế các số âm thành 0) 
+        first_hidden_layer = nn.ReLU(first_hidden_layer_input) 
+        # Tính tích vô hướng
+        second_hidden_layer_linear = nn.Linear(first_hidden_layer, self.weight_2)
+        # Cộng tích vô hướng với độ lệch để được đầu vào cho hàm kích hoạt 
+        second_hidden_layer_input = nn.AddBias(second_hidden_layer_linear, self.bias_2) 
+        # Tính đầu ra của hàm kích hoạt hàm ReLU (hàm thay thế các số âm thành 0)
+        second_hidden_layer = nn.ReLU(second_hidden_layer_input) 
+        # Đầu ra dự đoán
+        output_layer = nn.AddBias(nn.Linear(second_hidden_layer, self.weight_3),self.bias_3) 
+
+        return output_layer
 
     def get_loss(self, x, y):
         """
@@ -187,12 +218,26 @@ class DigitClassificationModel(object):
         Returns: a loss node
         """
         "*** YOUR CODE HERE ***"
+        y_predict = self.run(x) # Giá trị dự đoán của y
+        return nn.SoftmaxLoss(y_predict, y) # Tính loss giữa y dự đoán và y thực tế
 
     def train(self, dataset):
         """
         Trains the model.
         """
         "*** YOUR CODE HERE ***"
+        batch_size = 100
+        accuracy_num = 0 # Tham số độ chính xác
+        while True:
+            for x, y in dataset.iterate_once(batch_size):
+                loss = self.get_loss(x, y) # Tính giá trị mất mát
+                grads = nn.gradients(loss, self.params) # Tính gradient ("hiểu là đạo hàm riêng")
+                loss = nn.as_scalar(loss) # Trích xuất một số của loss để tính toán trong Python
+                for i in range(len(self.params)):
+                    self.params[i].update(grads[i], -self.learning_rate) # Trừ đi tích của gradient và learning_rate để tiến dần đến cực trị cho mất mát là nhỏ nhất
+            accuracy_num = dataset.get_validation_accuracy() # Tính toán độ chính xác
+            if(accuracy_num > 0.98): # Dừng vòng lặp khi độ chính xác đạt hơn 98%
+                break
 
 class LanguageIDModel(object):
     """
