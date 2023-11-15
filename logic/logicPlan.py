@@ -115,11 +115,13 @@ def findModelUnderstandingCheck() -> Dict[Expr, bool]:
     """Returns the result of findModel(Expr('a')) if lower cased expressions were allowed.
     You should not use findModel or Expr in this method.
     """
-    a = Expr('A')
     "*** BEGIN YOUR CODE HERE ***"
-    print("a.__dict__ is:", a.__dict__) # might be helpful for getting ideas
-    return {'a': True}
-    util.raiseNotDefined()
+    class lowercaseExpr:
+        def __init__(self, name: str) -> None:
+            self.name = name
+        def __repr__(self) -> str:
+            return self.name
+    return {lowercaseExpr('a'): True}
     "*** END YOUR CODE HERE ***"
 
 def entails(premise: Expr, conclusion: Expr) -> bool:
@@ -583,7 +585,6 @@ def slam(problem, agent) -> Generator:
     KB.append(conjoin(outer_wall_sent))
 
     "*** BEGIN YOUR CODE HERE ***"
-    # util.raiseNotDefined()
     KB.append(PropSymbolExpr(pacman_str, pac_x_0, pac_y_0, time=0))
 
     for t in range(agent.num_timesteps):
